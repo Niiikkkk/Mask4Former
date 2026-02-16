@@ -107,6 +107,23 @@ class HungarianMatcher(nn.Module):
             )
             cost_matrix = cost_matrix.reshape(num_queries, -1).cpu()
 
+            # Inside matcher.py -> forward()
+            if torch.isnan(cost_matrix).any() or torch.isinf(cost_matrix).any():
+                print("\n--- Matcher Debugging ---")
+                print(f"Is Class Cost NaN? {torch.isnan(cost_class).any()}")
+                print(f"Is Mask Cost NaN? {torch.isnan(cost_mask).any()}")
+                print(f"Is Dice Cost NaN? {torch.isnan(cost_dice).any()}")
+
+                # Check if a specific target is causing it
+                if torch.isnan(targets[b]['masks']).any():
+                    print(f"Target {targets[b]} has NaN in masks!")
+                if (targets[b]['masks'].sum() == 0):
+                    print(f"Target {targets[b]} has ZERO points in the mask! (Division by zero risk)")
+
+                # Check the model predictions
+                if torch.isnan(outputs['pred_masks'][b]).any():
+                    print("Model predictions are NaN! The weights are already exploded.")
+
             indices.append(linear_sum_assignment(cost_matrix))
 
         return [

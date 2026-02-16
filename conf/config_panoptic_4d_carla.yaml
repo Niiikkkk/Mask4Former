@@ -1,7 +1,7 @@
 general:
   mode: "train"
   seed: null
-  ckpt_path: null
+  ckpt_path: saved/Train_Carla_New/last.ckpt
   project_name: mask4former
   instance_population: 20
   dbscan_eps: null
@@ -11,9 +11,9 @@ general:
 
 defaults:
   - _self_
-  - data: kitti
+  - data: carla
   - data/data_loaders: simple_loader
-  - data/datasets: semantic_kitti
+  - data/datasets: semantic-carla
   - data/collation_functions: voxelize_collate
   - logging: full
   - model: mask4former

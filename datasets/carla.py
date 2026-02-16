@@ -8,10 +8,10 @@ from torch.utils.data import Dataset
 from datasets.utils import load_yaml
 
 
-class SemanticKITTIDataset(Dataset):
+class SemanticCARLADataset(Dataset):
     def __init__(
         self,
-        data_dir: Optional[str] = "data/processed/semantic_kitti",
+        data_dir: Optional[str] = "/home/nicholas/preprocessed",
         mode: Optional[str] = "train",
         add_distance: Optional[bool] = False,
         ignore_label: Optional[Union[int, List[int]]] = 255,
@@ -25,7 +25,7 @@ class SemanticKITTIDataset(Dataset):
         self.add_distance = add_distance
         self.instance_population = instance_population
         self.sweep = sweep
-        self.config = load_yaml("conf/semantic-kitti.yaml")
+        self.config = load_yaml("conf/carla.yaml")
 
         # loading database file
         database_path = Path(self.data_dir)
@@ -44,13 +44,16 @@ class SemanticKITTIDataset(Dataset):
         # reformulating in sweeps
         data = [[]]
         last_scene = self.data[0]["sequence"]
+        #Put all the elements with equal sequence into a list [78,78,...] [4,4,...] ...
         for x in self.data:
             if x["sequence"] == last_scene:
                 data[-1].append(x)
             else:
                 last_scene = x["sequence"]
                 data.append([x])
-        for i in range(len(data)):
+
+        for i in range(len(data)): #Here data is a list of lists, so data[i] is a list
+            #we are going to use a sweep of 1
             data[i] = list(self.chunks(data[i], sweep))
         self.data = [val for sublist in data for val in sublist]
 
@@ -58,8 +61,8 @@ class SemanticKITTIDataset(Dataset):
             self.instance_data = load_yaml(
                 database_path / f"{mode}_instances_database.yaml"
             )
-
-        # self.data = self.data[: int(len(self.data) * 0.002)]
+        self.data = self.data[:1]
+        print(self.data)
 
     def chunks(self, lst, n):
         if "train" in self.mode or n == 1:
@@ -80,15 +83,21 @@ class SemanticKITTIDataset(Dataset):
         labels_list = []
         acc_num_points = [0]
         for time, scan in enumerate(self.data[idx]):
-            points = np.fromfile(scan["filepath"], dtype=np.float32).reshape(-1, 4)
+            point_file = np.load(scan["filepath"])
+            points = np.frombuffer(point_file, dtype=np.float32).reshape(-1, 4)
             coordinates = points[:, :3]
             # rotate and translate
-            pose = np.array(scan["pose"], dtype=np.float32).T
-            coordinates = coordinates @ pose[:3, :3] + pose[3, :3]
+            #pose = np.array(scan["pose"], dtype=np.float32).T
+            #coordinates = coordinates @ pose[:3, :3] + pose[3, :3]
             coordinates_list.append(coordinates)
             acc_num_points.append(acc_num_points[-1] + len(coordinates))
             features = points[:, 3:4]
-            print(np.unique(features))
+
+            v_min = np.percentile(features, 1)  # Ignore lowest 1%
+            v_max = np.percentile(features, 99)  # Ignore highest 1%
+            features = np.clip(features, v_min, v_max)
+            features = (features - v_min) / (v_max - v_min + 1e-8)
+
             time_array = np.ones((features.shape[0], 1), dtype=np.float32) * time
             features = np.hstack((time_array, features))
             features_list.append(features)
@@ -96,7 +105,29 @@ class SemanticKITTIDataset(Dataset):
                 labels = np.zeros_like(features).astype(np.int64)
                 labels_list.append(labels)
             else:
-                panoptic_label = np.fromfile(scan["label_filepath"], dtype=np.uint32)
+                label_file = np.load(scan["label_filepath"])
+                panoptic_label = np.frombuffer(label_file, dtype=np.dtype([
+            ('x', np.float32), ('y', np.float32), ('z', np.float32),
+            ('CosAngle', np.float32), ('ObjIdx', np.uint32), ('ObjTag', np.uint32)]))
+
+                #CARLA semantic lidar, sometimes has 1 point more than the lidar file, so remove it
+                if len(points) < len(panoptic_label):
+                    print("MISMATCHED POINT AND LABEL LENGTHS", len(points), len(panoptic_label))
+                    points_ = points[:, :3]
+                    lbls_ = np.vstack((panoptic_label['x'], panoptic_label['y'], panoptic_label['z'])).T
+
+                    points_set = set(map(tuple, points_))
+
+                    # 2. Create a boolean mask: True if the label exists in points
+                    # This handles duplicates because every instance of the label is checked
+                    mask = np.array([tuple(lbl) in points_set for lbl in lbls_])
+
+                    # 3. Apply the mask to label_data_
+                    panoptic_label = panoptic_label[mask]
+                    print(len(points_), len(panoptic_label))
+
+                panoptic_label = np.array([panoptic_label['ObjTag'][i] + (panoptic_label['ObjIdx'][i] << 16) for i in
+                              range(len(panoptic_label))])
                 semantic_label, _ = self.label_parser(panoptic_label)
                 labels = np.hstack((semantic_label[:, None], panoptic_label[:, None]))
                 labels_list.append(labels)
@@ -108,12 +139,14 @@ class SemanticKITTIDataset(Dataset):
         if "train" in self.mode and self.instance_population > 0:
             max_instance_id = np.amax(labels[:, 1])
             pc_center = coordinates.mean(axis=0)
+            #INSTANCE POPULATION HERE IS A DATA AUGMENTATION TECHNIQUE!
             instance_c, instance_f, instance_l = self.populate_instances(
                 max_instance_id, pc_center, self.instance_population
             )
             coordinates = np.vstack((coordinates, instance_c))
             features = np.vstack((features, instance_f))
             labels = np.vstack((labels, instance_l))
+
 
         if self.add_distance:
             center_coordinate = coordinates.mean(0)
@@ -138,7 +171,10 @@ class SemanticKITTIDataset(Dataset):
 
         features = np.hstack((coordinates, features))
 
+        #Maps labels to other values according to label_info
+
         labels[:, 0] = np.vectorize(self.label_info.__getitem__)(labels[:, 0])
+        labels = labels.astype(np.long)
 
         return {
             "num_points": acc_num_points,
@@ -166,9 +202,9 @@ class SemanticKITTIDataset(Dataset):
 
     def label_parser(self, panoptic_label):
         semantic_label = panoptic_label & 0xFFFF
-        semantic_label = np.vectorize(self.config["learning_map"].__getitem__)(
-            semantic_label
-        )
+        #semantic_label = np.vectorize(self.config["learning_map"].__getitem__)(
+        #    semantic_label
+        #)
         instance_label = panoptic_label >> 16
         return semantic_label, instance_label
 

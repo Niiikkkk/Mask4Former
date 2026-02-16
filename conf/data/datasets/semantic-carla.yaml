@@ -1,7 +1,7 @@
 # @package data
 train_dataset:
-  _target_: datasets.kitti.SemanticKITTIDataset
-  data_dir: /kitty/preprocessed_kitty
+  _target_: datasets.carla.SemanticCARLADataset
+  data_dir: /home/nicholas/preprocessed_new_carla/
   mode: "${data.train_mode}"
   add_distance: ${data.add_distance}
   sweep: ${data.sweep}
@@ -10,8 +10,8 @@ train_dataset:
   volume_augmentations_path: conf/augmentation/volumentations_aug.yaml
 
 validation_dataset:
-  _target_: datasets.kitti.SemanticKITTIDataset
-  data_dir: /kitty/preprocessed_kitty
+  _target_: datasets.carla.SemanticCARLADataset
+  data_dir: /home/nicholas/preprocessed_new_carla/
   mode: ${data.validation_mode}
   add_distance: ${data.add_distance}
   sweep: ${data.sweep}
@@ -20,8 +20,8 @@ validation_dataset:
   volume_augmentations_path: null
 
 test_dataset:
-  _target_: datasets.kitti.SemanticKITTIDataset
-  data_dir: /kitty/preprocessed_kitty
+  _target_: datasets.carla.SemanticCARLADataset
+  data_dir: /home/nicholas/preprocessed_new_carla/
   mode: ${data.test_mode}
   add_distance: ${data.add_distance}
   sweep: ${data.sweep}

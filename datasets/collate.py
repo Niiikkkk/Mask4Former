@@ -115,7 +115,6 @@ def generate_target(features, labels, ignore_label):
             target.append(
                 {"labels": mask_labels, "masks": binary_masks, "bboxs": bboxs}
             )
-
     return target
 
 

@@ -1,0 +1,27 @@
+# splits
+train_mode: train
+validation_mode: validation
+test_mode: test
+
+# dataset
+ignore_label: 255
+add_distance: true
+in_channels: 2
+num_labels: 30
+instance_population: ${general.instance_population}
+sweep: 1  #Just 1 sweep for Carla dataset
+stuff_cls_ids: [0,1,2,3,4,5,6,7,8,9,10,11,20,21,22,23,24,25,26,27,28,29]
+min_points: 50
+class_names: ['unlabaled','road', 'sidewalk', 'building', 'wall', 'fence', 'pole', 'traffic light', 'traffic sign', 'vegetation',
+              'terrain', 'sky', 'pedestrian', 'rider', 'car', 'truck', 'bus', 'train', 'motorcycle', 'bicycle',
+              'static', 'dynamic', 'other', 'water', 'road line', 'ground', 'bridge', 'rail track', 'guard rail', 'rock']
+sample_sizes: [2000, 4000, 8000, 16000]
+
+# data loader
+pin_memory: true
+num_workers: 1
+batch_size: 1
+test_batch_size: 1
+
+# collation
+voxel_size: 0.1

@@ -9,7 +9,7 @@ add_distance: true
 in_channels: 2
 num_labels: 19
 instance_population: ${general.instance_population}
-sweep: 2
+sweep: 1
 stuff_cls_ids: [8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18]
 min_points: 50
 class_names: ['car', 'bicycle', 'motorcycle', 'truck', 'other-vehicle', 'person', 'bicyclist',
@@ -19,8 +19,8 @@ sample_sizes: [4000, 8000, 16000, 32000]
 
 # data loader
 pin_memory: true
-num_workers: 4
-batch_size: 4
+num_workers: 1
+batch_size: 1
 test_batch_size: 2
 
 # collation

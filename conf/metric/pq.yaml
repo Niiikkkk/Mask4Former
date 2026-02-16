@@ -1,0 +1,5 @@
+_target_: models.metrics.PanopticEval
+n_classes: ${data.num_labels}
+stuff_cls_ids: ${data.stuff_cls_ids}
+ignore: ${data.ignore_label}
+min_points: ${data.min_points}

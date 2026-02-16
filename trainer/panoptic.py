@@ -1,4 +1,6 @@
 import statistics
+from pyexpat import features
+
 import hydra
 import numpy as np
 import pytorch_lightning as pl
@@ -8,7 +10,7 @@ from collections import defaultdict
 from utils.utils import associate_instances, save_predictions, generate_logs
 
 
-class Panoptic4D(pl.LightningModule):
+class Panoptic(pl.LightningModule):
     def __init__(self, config):
         super().__init__()
 
@@ -28,20 +30,16 @@ class Panoptic4D(pl.LightningModule):
         data, target = batch
         raw_coordinates = data.raw_coordinates
 
+
         output = self.model(
             data.coordinates, data.features, raw_coordinates, self.device
         )
 
         #print(output["pred_bboxs"])
 
-        # --- DEBUG ADDITION ---
-        for name, param in self.model.named_parameters():
-            if torch.isnan(param).any():
-                print(f"!!! CRITICAL: Weights in {name} became NaN at batch {batch_idx} !!!")
-                # You can save the batch to inspect it later
-                # torch.save(batch, "failed_batch.pt")
-                raise RuntimeError("Stopping due to NaN weights")
-        # ----------------------
+        #for b in range(output['pred_logits'].shape[0]):
+        #    if torch.isnan(output['pred_masks'][b]).any() or torch.isinf(output['pred_masks'][b]).any():
+        #        return 0
 
         losses = self.criterion(output, target)
 
@@ -77,6 +75,8 @@ class Panoptic4D(pl.LightningModule):
             num_points,
             sequences,
         ):
+
+
             if seq != self.last_seq:
                 self.last_seq = seq
                 self.previous_instances = None
@@ -144,7 +144,16 @@ class Panoptic4D(pl.LightningModule):
             if i > 0:
                 self.previous_instances = ins_preds[indices]
 
-        losses = self.criterion(output, target)
+        broken = False
+        for b in range(output['pred_logits'].shape[0]):
+            if torch.isnan(output['pred_masks'][b]).any() or torch.isinf(output['pred_masks'][b]).any():
+                broken = True
+
+        #if broken:
+        #    losses = {'loss_class': torch.tensor(0.0), 'loss_mask': torch.tensor(0.0), 'loss_dice': torch.tensor(0.0),
+        #              'loss_box': torch.tensor(0.0)}
+        else:
+            losses = self.criterion(output, target)
         logs = generate_logs(losses, "val")
         logs["val_loss_mean"] = sum(losses.values()).cpu().item()
         self.validation_step_outputs.append(logs)
@@ -250,15 +259,16 @@ class Panoptic4D(pl.LightningModule):
     def on_validation_epoch_end(self):
         self.last_seq = None
         class_names = self.config.data.class_names
-        lstq, aq, all_aq, iou, all_iou = self.class_evaluator.getPQ4D()
+        PQ, SQ, RQ, pq_all, sq_all, rq_all = self.class_evaluator.getPQ()
         self.class_evaluator.reset()
         results = {}
-        results["val_mean_aq"] = aq
-        results["val_mean_iou"] = iou
-        results["val_mean_lstq"] = lstq
-        for i, (aq, iou) in enumerate(zip(all_aq, all_iou)):
-            results[f"val_{class_names[i]}_aq"] = aq.item()
-            results[f"val_{class_names[i]}_iou"] = iou.item()
+        results["val_mean_pq"] = PQ
+        results["val_mean_sq"] = SQ
+        results["val_mean_RQ"] = RQ
+        for i, (pq,sq,rq) in enumerate(zip(pq_all, sq_all, rq_all)):
+            results[f"val_{class_names[i]}_pq"] = pq.item()
+            results[f"val_{class_names[i]}_sq"] = sq.item()
+            results[f"val_{class_names[i]}_rq"] = rq.item()
         self.log_dict(results)
 
         losses = defaultdict(list)

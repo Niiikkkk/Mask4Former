@@ -70,32 +70,11 @@ def associate_instances(previous_ins_label, current_ins_label):
 
 def save_predictions(sem_preds, ins_preds, seq_name, sweep_name):
     filename = (
-        Path("/globalwork/yilmaz/submission/sequences") / seq_name / "predictions"
+        Path("/home/nicholas/mask4former") / seq_name / "predictions"
     )
     # assert not filename.exists(), "Path exists"
     filename.mkdir(parents=True, exist_ok=True)
-    learning_map_inv = {
-        1: 10,  # "car"
-        2: 11,  # "bicycle"
-        3: 15,  # "motorcycle"
-        4: 18,  # "truck"
-        5: 20,  # "other-vehicle"
-        6: 30,  # "person"
-        7: 31,  # "bicyclist"
-        8: 32,  # "motorcyclist"
-        9: 40,  # "road"
-        10: 44,  # "parking"
-        11: 48,  # "sidewalk"
-        12: 49,  # "other-ground"
-        13: 50,  # "building"
-        14: 51,  # "fence"
-        15: 70,  # "vegetation"
-        16: 71,  # "trunk"
-        17: 72,  # "terrain"
-        18: 80,  # "pole"
-        19: 81,  # "traffic-sign"
-    }
-    sem_preds = np.vectorize(learning_map_inv.__getitem__)(sem_preds)
+
     panoptic_preds = (ins_preds << 16) + sem_preds
     file_path = str(filename / sweep_name) + ".label"
     if not os.path.exists(file_path):

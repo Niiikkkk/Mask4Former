@@ -3,6 +3,7 @@ import os
 import hydra
 from omegaconf import DictConfig, OmegaConf
 from trainer.panoptic_4d import Panoptic4D
+from trainer.panoptic import Panoptic
 from utils.utils import flatten_dict
 from pytorch_lightning import Trainer, seed_everything
 
@@ -31,7 +32,8 @@ def get_parameters(cfg: DictConfig):
             flatten_dict(OmegaConf.to_container(cfg, resolve=True))
         )
 
-    model = Panoptic4D(cfg)
+    #model = Panoptic4D(cfg)
+    model = Panoptic(cfg)
 
     logger.info(flatten_dict(OmegaConf.to_container(cfg, resolve=True)))
     return cfg, model, loggers
@@ -82,8 +84,13 @@ def test(cfg: DictConfig):
     runner.test(model=model, ckpt_path=cfg.general.ckpt_path)
 
 
+
+# @hydra.main(
+#     version_base=None, config_path="conf", config_name="config_panoptic_4d_carla.yaml"
+# )
 @hydra.main(
-    version_base=None, config_path="conf", config_name="config_panoptic_4d.yaml"
+    #version_base=None, config_path="conf", config_name="config_panoptic_4d.yaml"
+    version_base=None, config_path="conf", config_name="config_panoptic_4d_carla.yaml"
 )
 def main(cfg: DictConfig):
     if cfg["general"]["mode"] == "train":

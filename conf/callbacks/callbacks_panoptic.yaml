@@ -5,8 +5,8 @@
 
 - _target_: pytorch_lightning.callbacks.ModelCheckpoint
   dirpath: ${general.save_dir}
-  filename: "{epoch}-{val_mean_lstq:.3f}"
-  monitor: val_mean_lstq
+  filename: "{epoch}-{val_mean_pq:.3f}"
+  monitor: val_mean_pq
   mode: max
 
 - _target_: pytorch_lightning.callbacks.LearningRateMonitor
