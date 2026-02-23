@@ -103,7 +103,16 @@ class LossOverall(nn.Module):
             pred_bboxs = outputs["pred_bboxs"][batch_id, map_id, :]
             target_bboxs = targets[batch_id]["bboxs"][target_id]
             target_classes = targets[batch_id]["labels"][target_id]
-            keep_things = target_classes < 8
+
+            # This is for kitty dataset, we have that classes first 8 classes are things and the rest are stuff.
+            # keep_things = target_classes < 8
+
+            #In out case those are the stuff classes
+            #[0,1,2,3,4,5,6,7,8,9,10,11,20,21,22,23,24,25,26,27,28,29]
+
+            keep_things = target_classes >= 11
+            keep_things = keep_things <= 18
+
             if torch.any(keep_things):
                 target_bboxs = target_bboxs[keep_things]
                 pred_bboxs = pred_bboxs[keep_things]

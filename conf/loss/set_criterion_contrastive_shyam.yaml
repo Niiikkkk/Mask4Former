@@ -1,0 +1,57 @@
+_target_: models.criterion_contrastive.SetCriterionContrastive
+num_classes: ${data.num_labels}
+eos_coef: 0.1
+losses:
+  - "labels"
+  - "masks"
+  - "bboxs"
+  - "contrastive"
+
+# Hard-example mining / focal loss parameters
+ohem_enable: true
+ohem_frac: 0.3
+ohem_min_k: 512
+use_focal: false
+focal_gamma: 1.5
+focal_alpha: 0.5
+
+anomaly_class_id: 29  # Set to the correct anomaly class ID, in our case is 30, but -1
+
+# Contrastive loss configuration
+contrastive_name: "bce"  # 'bce' or 'margin'
+anomaly_score_name: "msp"  # 'msp' | 'entropy' | 'energy' | 'max_logit'
+
+# If true, reduce anomaly BCE loss by instance then average across instances
+anomaly_instance_mean: false
+
+# Margin-based loss parameters (used when contrastive_name='margin')
+margin: 2.0
+
+# Distance weighting parameters (used in BCE contrastive loss)
+use_distance_weighting: true
+distance_weight_mode: "linear"  # 'gaussian' or 'linear' or 'quadratic'
+distance_weight_center: 45.0  # meters (for gaussian mode)
+distance_weight_sigma: 10.0   # meters (for gaussian mode)
+distance_weight_min: 1.0
+distance_weight_max: 2.0
+distance_weight_linear_end: 55.0  # meters (for linear mode)
+
+# Advanced BCE weighting parameters (3-component weighting)
+use_bce_weighting_product: false   # set true to multiply the three components
+use_bce_weighting_sum: false       # set true to combine via weighted sum
+bce_weight_sum_coeffs: [1.0, 1.0, 1.0]
+bce_weight_distance_max: 80.0
+bce_weight_spatial_k: 8
+bce_weight_spatial_max_points: 6000
+bce_weight_target_mean: 1.2
+bce_weight_min_value: 0.5
+bce_weight_max_value: 2.0
+
+# PEBAL loss configuration (only used if "pebal" is in losses list)
+pebal_reward: 4.5
+pebal_energy_weight: 0.1
+
+# INSTANCE VARIANCE LOSS CONFIGURATION
+instance_variance_weight: 0.0  # Set to your desired constant
+instance_variance_min_points: 10 # Minimum points to compute variance (avoids NaNs on small fragments)
+

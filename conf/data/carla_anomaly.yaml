@@ -14,7 +14,7 @@ stuff_cls_ids: [0,1,2,3,4,5,6,7,8,9,10,11,20,21,22,23,24,25,26,27,28,29]
 min_points: 50
 class_names: ['unlabaled','road', 'sidewalk', 'building', 'wall', 'fence', 'pole', 'traffic light', 'traffic sign', 'vegetation',
               'terrain', 'sky', 'pedestrian', 'rider', 'car', 'truck', 'bus', 'train', 'motorcycle', 'bicycle',
-              'static', 'dynamic', 'other', 'water', 'road line', 'ground', 'bridge', 'rail track', 'guard rail', 'rock']
+              'static', 'dynamic', 'other', 'water', 'road line', 'ground', 'bridge', 'rail track', 'guard rail', 'rock', 'anomaly']
 sample_sizes: [2000, 4000, 8000, 16000]
 
 # data loader

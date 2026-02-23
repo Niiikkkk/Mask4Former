@@ -1,0 +1,3 @@
+inference:
+  # Output mode: 'confidence', 'labels', or 'both'
+  output_mode: "confidence"

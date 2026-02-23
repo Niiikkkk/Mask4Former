@@ -1,7 +1,8 @@
 general:
   mode: "train"
   seed: null
-  ckpt_path: null
+  #ckpt_path: null
+  ckpt_path: saved/Train_Carla_New/last.ckpt
   project_name: mask4former
   instance_population: 20
   dbscan_eps: null
@@ -11,18 +12,20 @@ general:
 
 defaults:
   - _self_
-  - data: carla
+  - data: carla_anomaly
   - data/data_loaders: simple_loader
-  - data/datasets: semantic-carla
+  - data/datasets: semantic_carla_anomaly
   - data/collation_functions: voxelize_collate
   - logging: full
-  - model: mask4former
+  - model: mask4former3D
   - optimizer: adamw
   - scheduler: onecyclelr
   - trainer: trainer30
-  - callbacks: callbacks_panoptic
-  - loss: set_criterion
+  - callbacks: callbacks_panoptic3d_anomalyhead
+  - loss: set_criterion_contrastive_shyam
   - metric: pq
+  - inference: inference
+  - matcher: hungarian_matcher
 
 hydra:
   run:

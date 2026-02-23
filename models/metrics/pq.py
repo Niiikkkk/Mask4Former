@@ -9,7 +9,7 @@ class PanopticEval:
     """
 
     def __init__(self, n_classes, stuff_cls_ids=[], ignore=None, offset=2 ** 32, min_points=30):
-        self.n_classes = n_classes
+        self.n_classes = n_classes + 1 # add one for anomaly class !!!!
         self.ignore = np.array(ignore, dtype=np.int64)
         self.include = np.array([n for n in range(self.n_classes) if n not in self.ignore], dtype=np.int64)
 
@@ -19,6 +19,8 @@ class PanopticEval:
         self.things_cls_ids = [
             id for id in range(self.n_classes) if id not in stuff_cls_ids
         ]
+
+        print("[PANOPTIC EVAL] THINGS: ", self.things_cls_ids)
 
         self.reset()
         self.offset = offset  # largest number of instances in a given scan
@@ -166,13 +168,17 @@ class PanopticEval:
         ''' IMPORTANT: Inputs must be batched. Either [N,H,W], or [N, P]
         '''
 
+        print("sem: ",np.unique(y_sem))
+
         x_sem = x_sem[indices]
         x_inst = x_inst[indices]
         y_sem = y_sem[indices]
         y_inst = y_inst[indices]
 
         # only interested in points that are outside the void area (not in excluded classes)
-        gt_not_in_excl_mask = y_sem != self.ignore
+        # We have to remove the anomaly points, which are class 30 and 0
+        #gt_not_in_excl_mask = y_sem != self.ignore
+        gt_not_in_excl_mask = (y_sem != 30) & (y_sem != 0)
         # remove all other points
         x_sem = x_sem[gt_not_in_excl_mask]
         y_sem = y_sem[gt_not_in_excl_mask]

@@ -83,15 +83,21 @@ def save_predictions(sem_preds, ins_preds, seq_name, sweep_name):
 
 
 def generate_logs(losses, mode="train"):
+
+    #print(losses.keys())
+    #loss_contraistive is for anomaly part, remove it if not needed
+
     logs = {
         f"{mode}_mean_loss_class": [],
         f"{mode}_mean_loss_mask": [],
         f"{mode}_mean_loss_dice": [],
         f"{mode}_mean_loss_box": [],
+        f"{mode}_mean_loss_contrastive": [],
     }
 
     for k, v in losses.items():
-        if "loss_class" in k:
+        #if "loss_class" in k:
+        if "loss_ce" in k:
             logs[f"{mode}_mean_loss_class"].append(v.detach().cpu().item())
         elif "loss_mask" in k:
             logs[f"{mode}_mean_loss_mask"].append(v.detach().cpu().item())
@@ -99,6 +105,8 @@ def generate_logs(losses, mode="train"):
             logs[f"{mode}_mean_loss_dice"].append(v.detach().cpu().item())
         elif "loss_box" in k:
             logs[f"{mode}_mean_loss_box"].append(v.detach().cpu().item())
+        elif "loss_contrastive" in k:
+            logs[f"{mode}_mean_loss_contrastive"].append(v.detach().cpu().item())
 
     logs = {k: statistics.mean(v) for k, v in logs.items()}
 

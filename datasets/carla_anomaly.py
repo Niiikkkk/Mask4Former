@@ -11,7 +11,7 @@ from datasets.utils import load_yaml
 class SemanticCARLADataset(Dataset):
     def __init__(
         self,
-        data_dir: Optional[str] = "/home/nicholas/preprocessed",
+        data_dir: Optional[str] = "/home/nicholas/preprocessed_anomalies",
         mode: Optional[str] = "train",
         add_distance: Optional[bool] = False,
         ignore_label: Optional[Union[int, List[int]]] = 255,
@@ -25,7 +25,7 @@ class SemanticCARLADataset(Dataset):
         self.add_distance = add_distance
         self.instance_population = instance_population
         self.sweep = sweep
-        self.config = load_yaml("conf/carla.yaml")
+        self.config = load_yaml("conf/carla_anomaly.yaml")
 
         # loading database file
         database_path = Path(self.data_dir)
@@ -126,7 +126,41 @@ class SemanticCARLADataset(Dataset):
 
                 panoptic_label = np.array([panoptic_label['ObjTag'][i] + (panoptic_label['ObjIdx'][i] << 16) for i in
                               range(len(panoptic_label))])
-                semantic_label, _ = self.label_parser(panoptic_label)
+
+
+                # ====================================== ANOMALIES =============
+                #I have different kind of anomalies (from 30 to 36) idx
+                # WE should filter out class 30, which is pothole, in order to see if the model can get it during test time
+                if "train" or "validation" in self.mode:
+                    labels = panoptic_label & 0xFFFF
+                    instances = panoptic_label >> 16
+                    #Set to class 0, which will be ignored
+
+                    labels[labels == 30] = 0
+                    panoptic_label = (instances << 16) + labels
+
+                labels = panoptic_label & 0xFFFF
+                instances = panoptic_label >> 16
+
+                lbl = [l for l in panoptic_label if l & 0xFFFF >= 30]
+                num_anomalies = np.unique(lbl)
+
+                # Put all the amoomalies under the same class, in this case class 30 and give them different instance ids
+                instance = 0
+                for anoamly_class in num_anomalies:
+                    mask = panoptic_label == anoamly_class
+                    labels[mask] = 30
+                    instances[mask] = instance
+                    instance += 1
+
+                panoptic_label = (instances << 16) + labels
+
+                lbl = [l for l in panoptic_label if l & 0xFFFF >= 30]
+                num_anomalies = np.unique(lbl)
+
+                #=====================================================================
+
+                semantic_label, instance_lbl = self.label_parser(panoptic_label)
                 labels = np.hstack((semantic_label[:, None], panoptic_label[:, None]))
                 labels_list.append(labels)
 
@@ -173,6 +207,8 @@ class SemanticCARLADataset(Dataset):
 
         labels[:, 0] = np.vectorize(self.label_info.__getitem__)(labels[:, 0])
         labels = labels.astype(np.long)
+
+        # In case of anomalies, after the vectorize, the anomaly label will be 29, meanwhile the pothole (for training) will be 255
 
         return {
             "num_points": acc_num_points,

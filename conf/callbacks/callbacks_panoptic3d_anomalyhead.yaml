@@ -1,0 +1,27 @@
+- _target_: pytorch_lightning.callbacks.ModelCheckpoint
+  monitor: val_aupr
+  save_last: false
+  save_top_k: 5
+  mode: max
+  dirpath: ${general.save_dir}
+  filename: "{epoch}-{val_aupr:.3f}"
+  # Only checkpoint after validation when val_aupr exists
+  every_n_train_steps: null
+  every_n_epochs: 1
+  save_on_train_epoch_end: false
+
+# Save a checkpoint at the end of EVERY epoch
+- _target_: pytorch_lightning.callbacks.ModelCheckpoint
+  save_on_train_epoch_end: true
+  dirpath: ${general.save_dir}
+  save_last: true
+
+# - _target_: pytorch_lightning.callbacks.ModelCheckpoint
+#   monitor: null          # do not monitor a metric
+#   save_top_k: -1         # save all checkpoints
+#   every_n_train_steps: 1000
+#   save_on_train_epoch_end: false
+#   dirpath: ${general.save_dir}/steps
+#   filename: "step{step:07d}"
+
+- _target_: pytorch_lightning.callbacks.LearningRateMonitor

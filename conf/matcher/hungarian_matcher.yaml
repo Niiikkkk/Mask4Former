@@ -1,0 +1,9 @@
+_target_: models.matcher_anomaly.HungarianMatcher
+cost_class: 2.
+cost_mask: 5.
+cost_dice: 2.
+cost_box: 5.
+cost_anomaly: 2.  # new
+cost_contrastive: 15.  # new #msp 15, entropy 20, energy 20, maxlogit 30
+cost_pebal_gambler: 3.  # new
+cost_pebal_energy: 3.  # new

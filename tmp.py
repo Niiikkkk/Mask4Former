@@ -42,7 +42,7 @@ pcd = o3d.geometry.PointCloud()
 #pcd.points = o3d.utility.Vector3dVector(points[:, :3])
 # o3d.visualization.draw_geometries_with_vertex_selection([pcd])
 
-path = "/home/nicholas/Desktop/main_UE4/output/Val/1/lidar/raw/lidar-9872760.npy"
+path = "/home/nicholas/Desktop/main_UE4/output/Train/1/lidar/raw/lidar-4436.npy"
 #path = "/anomlay_carla/1/semantic_lidar/raw/semantic_lidar-3414.npy"
 lidar_path = path.replace("lidar", "semantic_lidar")
 # path = "/kitty/dataset/sequences/08/velodyne/000000.bin"
@@ -61,6 +61,7 @@ points = np.frombuffer(x, dtype=np.dtype(np.float32)).reshape(-1, 4)
 # points = np.fromfile(path, np.float32).reshape(-1, 4)
 #points[:, 1] = -points[:, 1]  # Invert Y axis
 print(points.shape)
+print(label_data_.shape)
 print(points[:,3].max(), points[:,3].min())
 
 pcd = o3d.geometry.PointCloud()
