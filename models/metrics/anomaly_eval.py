@@ -35,6 +35,7 @@ class AnomalyEval:
         self.max_points = max_points
         self.rng = np.random.default_rng(seed)
         self.eps = 1e-15
+        self.ignore_label = 0
         
         # Storage for predictions and ground truth
         self.reset()
@@ -65,6 +66,13 @@ class AnomalyEval:
                            [N] array of anomaly scores (probabilities)
             semantic_labels: [N] array of semantic class labels
         """
+
+        anomaly_logits = anomaly_logits[semantic_labels!=self.ignore_label]
+        semantic_labels = semantic_labels[semantic_labels!=self.ignore_label]
+
+
+        print("Filtered labels: ", np.unique(semantic_labels))
+
         # Convert logits to anomaly scores (probability of being anomaly)
         if len(anomaly_logits.shape) == 2:
             # If 2D [N, 2], apply softmax and take anomaly probability

@@ -351,7 +351,7 @@ class PanopticSegmentationAnomalies(pl.LightningModule):
             data.coordinates, data.features, raw_coordinates, self.device, is_eval=True
         )
 
-        if self.config.inference.output_mode == "confidence":
+        if self.config.inference.inference.output_mode == "confidence":
 
             def get_maxlogit(logit, mask):
                 """Max logit using RAW logits (pre-softmax) - all 19 semantic classes"""
@@ -510,7 +510,7 @@ class PanopticSegmentationAnomalies(pl.LightningModule):
                 offset_coords_idx += curr_coords_idx
                 
                 if verbose:
-                    print(f"\nProcessing sample {sequences[b_idx][0]}/{sequences[b_idx][1]}:")
+                    #print(f"\nProcessing sample {sequences[b_idx][0]}/{sequences[b_idx][1]}:")
                     print(f"  Total points: {len(curr_coords_mapped)}")
                 
                 # Perform clustering only if enabled

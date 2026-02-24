@@ -2,7 +2,7 @@ general:
   mode: "train"
   seed: null
   #ckpt_path: null
-  ckpt_path: saved/Train_Carla_New/last.ckpt
+  ckpt_path: saved/2026-02-24_083936_M4F/last.ckpt
   project_name: mask4former
   instance_population: 20
   dbscan_eps: null
@@ -17,7 +17,7 @@ defaults:
   - data/datasets: semantic_carla_anomaly
   - data/collation_functions: voxelize_collate
   - logging: full
-  - model: mask4former3D
+  - model: mask4former
   - optimizer: adamw
   - scheduler: onecyclelr
   - trainer: trainer30

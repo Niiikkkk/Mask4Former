@@ -99,11 +99,15 @@ class SemanticCARLADataset(Dataset):
             time_array = np.ones((features.shape[0], 1), dtype=np.float32) * time
             features = np.hstack((time_array, features))
             features_list.append(features)
-            if "test" in self.mode:
+            if "test_" in self.mode:
                 labels = np.zeros_like(features).astype(np.int64)
                 labels_list.append(labels)
             else:
-                label_file = np.load(scan["label_filepath"])
+                if "test" in self.mode:
+                    lbl_path = scan["filepath"].replace("lidar", "semantic_lidar")
+                    label_file = np.load(lbl_path)
+                else:
+                    label_file = np.load(scan["label_filepath"])
                 panoptic_label = np.frombuffer(label_file, dtype=np.dtype([
             ('x', np.float32), ('y', np.float32), ('z', np.float32),
             ('CosAngle', np.float32), ('ObjIdx', np.uint32), ('ObjTag', np.uint32)]))
@@ -131,7 +135,7 @@ class SemanticCARLADataset(Dataset):
                 # ====================================== ANOMALIES =============
                 #I have different kind of anomalies (from 30 to 36) idx
                 # WE should filter out class 30, which is pothole, in order to see if the model can get it during test time
-                if "train" or "validation" in self.mode:
+                if "train" in self.mode:
                     labels = panoptic_label & 0xFFFF
                     instances = panoptic_label >> 16
                     #Set to class 0, which will be ignored
@@ -144,19 +148,41 @@ class SemanticCARLADataset(Dataset):
 
                 lbl = [l for l in panoptic_label if l & 0xFFFF >= 30]
                 num_anomalies = np.unique(lbl)
+                if len(num_anomalies) > 0:
+                    labels_anomalies = num_anomalies & 0xFFFF
 
-                # Put all the amoomalies under the same class, in this case class 30 and give them different instance ids
-                instance = 0
-                for anoamly_class in num_anomalies:
-                    mask = panoptic_label == anoamly_class
-                    labels[mask] = 30
-                    instances[mask] = instance
-                    instance += 1
+                    possible_masks = {
+                        "all": labels_anomalies >= 30,
+                        "pothole": labels_anomalies == 30,
+                        "tiny": labels_anomalies == 33,
+                        "small": labels_anomalies == 34,
+                        "medium": labels_anomalies == 35,
+                        "large": labels_anomalies == 36,
+                    }
 
-                panoptic_label = (instances << 16) + labels
+                    mask = possible_masks["large"]
+                    num_anomalies_new = num_anomalies[mask]
+                    anomalies_to_ignore = [i for i in num_anomalies if i not in num_anomalies_new]
 
-                lbl = [l for l in panoptic_label if l & 0xFFFF >= 30]
-                num_anomalies = np.unique(lbl)
+                    for anomaly in anomalies_to_ignore:
+                        mask = panoptic_label == anomaly
+                        labels[mask] = 0
+                        instances[mask] = 0
+
+
+                    # Put all the amoomalies under the same class, in this case class 30 and give them different instance ids
+                    instance = 0
+
+                    print(num_anomalies_new & 0xFFFF)
+                    for anoamly_class in num_anomalies_new:
+                        mask = panoptic_label == anoamly_class
+                        labels[mask] = 30
+                        instances[mask] = instance
+                        instance += 1
+                    panoptic_label = (instances << 16) + labels
+
+                    lbl = [l for l in panoptic_label if l & 0xFFFF >= 30]
+                    num_anomalies = np.unique(lbl)
 
                 #=====================================================================
 
