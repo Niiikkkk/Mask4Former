@@ -12,7 +12,7 @@ train_dataset:
 validation_dataset:
   _target_: datasets.carla_anomaly.SemanticCARLADataset
   data_dir: /home/nicholas/preprocessed_anomalies/
-  mode: ${data.validation_mode}
+  mode: ${data.test_mode}
   add_distance: ${data.add_distance}
   sweep: ${data.sweep}
   instance_population: 0

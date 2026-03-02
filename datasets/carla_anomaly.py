@@ -160,6 +160,8 @@ class SemanticCARLADataset(Dataset):
                         "large": labels_anomalies == 36,
                     }
 
+                    #print("Before: ", np.unique(lbl,return_counts=True))
+
                     mask = possible_masks["large"]
                     num_anomalies_new = num_anomalies[mask]
                     anomalies_to_ignore = [i for i in num_anomalies if i not in num_anomalies_new]
@@ -173,7 +175,6 @@ class SemanticCARLADataset(Dataset):
                     # Put all the amoomalies under the same class, in this case class 30 and give them different instance ids
                     instance = 0
 
-                    print(num_anomalies_new & 0xFFFF)
                     for anoamly_class in num_anomalies_new:
                         mask = panoptic_label == anoamly_class
                         labels[mask] = 30
@@ -183,6 +184,8 @@ class SemanticCARLADataset(Dataset):
 
                     lbl = [l for l in panoptic_label if l & 0xFFFF >= 30]
                     num_anomalies = np.unique(lbl)
+
+                    #print("After:", np.unique(lbl,return_counts=True))
 
                 #=====================================================================
 

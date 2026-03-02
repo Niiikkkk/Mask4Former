@@ -2,7 +2,7 @@ general:
   mode: "train"
   seed: null
   #ckpt_path: null
-  ckpt_path: saved/2026-02-24_083936_M4F/last.ckpt
+  ckpt_path: saved/2026-02-24_180927/epoch=43-val_aupr=0.420.ckpt
   project_name: mask4former
   instance_population: 20
   dbscan_eps: null
