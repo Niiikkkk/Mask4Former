@@ -52,10 +52,13 @@ class CarlaPreprocessing:
         val_path = self.data_dir / "val"
         test_path = self.data_dir / "test"
         for path,mode in zip([train_path, val_path, test_path],["train", "validation", "test"]):
-            dirs_ = os.listdir(path)
-            for dir in dirs_:
-                filepaths = list(path.glob(f"{dir}/lidar/raw/*npy"))
-                self.files[mode].extend(sorted([str(file) for file in filepaths]))
+            weathers = os.listdir(path)
+            for w in weathers:
+                path_ = Path(os.path.join(path,w))
+                dirs_ = os.listdir(path_)
+                for dir in dirs_:
+                    filepaths = list(path_.glob(f"{dir}/lidar/raw/*npy"))
+                    self.files[mode].extend(sorted([str(file) for file in filepaths]))
 
     def preprocess(self):
         for mode in self.modes:
@@ -89,8 +92,9 @@ class CarlaPreprocessing:
     def process_file(self, filepath, mode):
         if mode == "validation":
             mode = "val"
+        weather = filepath.split("/")[7]
         sequence, scan = re.search(
-            r"/home/nicholas/Desktop/main_UE4/output/"+mode+"/(\d+)/lidar/raw/lidar-(\d+)\.npy$", filepath
+            r"/home/nicholas/Desktop/main_UE4/output/"+mode+"/"+weather+"/(\d+)/lidar/raw/lidar-(\d+)\.npy$", filepath
         ).group(1, 2)
         filebase = {
             "filepath": filepath,
@@ -132,8 +136,10 @@ class CarlaPreprocessing:
 
         mode = "train" if "train" in filebase["filepath"] else "val" if "val" in filebase["filepath"] else "test"
 
+        weather = filebase["filepath"].split("/")[7]
+
         sequence, scan = re.search(
-            r"/home/nicholas/Desktop/main_UE4/output/"+mode+"/(\d+)/lidar/raw/lidar-(\d+)\.npy$", filebase["filepath"]
+            r"/home/nicholas/Desktop/main_UE4/output/"+mode+"/"+weather+"/(\d+)/lidar/raw/lidar-(\d+)\.npy$", filebase["filepath"]
         ).group(1, 2)
         file_instances = []
 

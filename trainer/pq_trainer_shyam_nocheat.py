@@ -346,6 +346,7 @@ class PanopticSegmentationAnomalies(pl.LightningModule):
         inverse_maps = data.inverse_maps
         raw_coordinates = data.raw_coordinates
         sequences = data.sequences
+        file_path = data.filepaths
 
         output = self.model(
             data.coordinates, data.features, raw_coordinates, self.device, is_eval=True
@@ -576,8 +577,11 @@ class PanopticSegmentationAnomalies(pl.LightningModule):
                 
                 # Save point-level scores
                 for score_name, score_array in computed_scores.items():
-                    score_base_path = save_paths[score_name] / f"{sequences[b_idx][0]}"
-                    score_file_path = score_base_path / f"{sequences[b_idx][1]}.txt"
+                    score_base_path = save_paths[score_name] / f"{sequences[0]}"
+                    print(file_path[0])
+                    out_path = file_path[0].split("/")[5:]
+                    out_path = "_".join(out_path)
+                    score_file_path = score_base_path / f"{out_path}.txt"
                     
                     if not score_base_path.exists():
                         score_base_path.mkdir(exist_ok=True, parents=True)

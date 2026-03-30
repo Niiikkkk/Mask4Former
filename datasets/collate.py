@@ -16,7 +16,9 @@ class VoxelizeCollate:
             inverse_maps,
             num_points,
             sequences,
+            filepaths
         ) = (
+            [],
             [],
             [],
             [],
@@ -30,6 +32,7 @@ class VoxelizeCollate:
             original_labels.append(sample["labels"])
             num_points.append(sample["num_points"])
             sequences.append(sample["sequence"])
+            filepaths.append(sample["file_path"])
             sample_c, sample_f, sample_l, inverse_map = voxelize(
                 sample["coordinates"],
                 sample["features"],
@@ -59,6 +62,7 @@ class VoxelizeCollate:
                 inverse_maps,
                 num_points,
                 sequences,
+                filepaths,
             ),
             target,
         )
@@ -128,6 +132,7 @@ class NoGpu:
         inverse_maps=None,
         num_points=None,
         sequences=None,
+        filepaths=None,
     ):
         """helper class to prevent gpu loading on lightning"""
         self.coordinates = coordinates
@@ -137,3 +142,4 @@ class NoGpu:
         self.inverse_maps = inverse_maps
         self.num_points = num_points
         self.sequences = sequences
+        self.filepaths = filepaths

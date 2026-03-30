@@ -109,11 +109,8 @@ def test(cfg: DictConfig):
     version_base=None, config_path="conf", config_name="config_panoptic_4d_carla.yaml"
 )
 def main(cfg: DictConfig):
-
-    test(cfg)
-    exit()
     cfg, model, loggers = get_parameters(cfg)
-    lidar_dir = "/anomlay_carla/1/lidar/raw/lidar-3414.npy"
+    lidar_dir = "/home/nicholas/Desktop/main_UE4/output/test/Sunny/47/lidar/raw/lidar-521833.npy"
     x = read_lidar(lidar_dir, voxel_size=0.1)
     print(model.device)
     output = model.model(x["coordinates"], x["features"], x["raw_coordinates"], model.device ,is_eval=True)

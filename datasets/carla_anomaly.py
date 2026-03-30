@@ -62,6 +62,9 @@ class SemanticCARLADataset(Dataset):
                 database_path / f"{mode}_instances_database.yaml"
             )
 
+        self.method = "large"
+        print("Evaluatin on ", self.method)
+
     def chunks(self, lst, n):
         if "train" in self.mode or n == 1:
             for i in range(len(lst) - n + 1):
@@ -153,6 +156,7 @@ class SemanticCARLADataset(Dataset):
 
                     possible_masks = {
                         "all": labels_anomalies >= 30,
+                        "all_without_potholes": labels_anomalies > 30,
                         "pothole": labels_anomalies == 30,
                         "tiny": labels_anomalies == 33,
                         "small": labels_anomalies == 34,
@@ -160,9 +164,9 @@ class SemanticCARLADataset(Dataset):
                         "large": labels_anomalies == 36,
                     }
 
-                    #print("Before: ", np.unique(lbl,return_counts=True))
+                    print("Before: ", np.unique(lbl,return_counts=True))
 
-                    mask = possible_masks["large"]
+                    mask = possible_masks[self.method]
                     num_anomalies_new = num_anomalies[mask]
                     anomalies_to_ignore = [i for i in num_anomalies if i not in num_anomalies_new]
 
@@ -185,7 +189,7 @@ class SemanticCARLADataset(Dataset):
                     lbl = [l for l in panoptic_label if l & 0xFFFF >= 30]
                     num_anomalies = np.unique(lbl)
 
-                    #print("After:", np.unique(lbl,return_counts=True))
+                    print("After:", np.unique(lbl,return_counts=True))
 
                 #=====================================================================
 
@@ -245,6 +249,7 @@ class SemanticCARLADataset(Dataset):
             "features": features,
             "labels": labels,
             "sequence": scan["sequence"],
+            "file_path": self.data[idx][0]["filepath"]
         }
 
     def _select_correct_labels(self, learning_ignore):
