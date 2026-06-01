@@ -277,13 +277,27 @@ def show_matplotlib(
     top_view: bool,
     view_elev: float,
     view_azim: float,
+    zoom_factor: float,
 ) -> None:
     import matplotlib.pyplot as plt
 
     fig = plt.figure(figsize=(10, 8))
     ax = fig.add_subplot(111, projection="3d")
     ax.scatter(points_xyz[:, 0], points_xyz[:, 1], points_xyz[:, 2], c=colors_rgb, s=marker_size)
+
+    mins = points_xyz.min(axis=0)
+    maxs = points_xyz.max(axis=0)
+    span = np.maximum(maxs - mins, 1e-6)
+    center = (mins + maxs) / 2.0
+    max_range = float(np.max(span) / 2.0) * float(zoom_factor)
+    ax.set_xlim(center[0] - max_range, center[0] + max_range)
+    ax.set_ylim(center[1] - max_range, center[1] + max_range)
+    ax.set_zlim(center[2] - max_range, center[2] + max_range)
+
     ax.set_title(title)
+    ax.set_axis_off()
+    ax.grid(False)
+    ax.set_box_aspect((1.0, 1.0, 1.0))
     _apply_matplotlib_view(ax, top_view=top_view, view_elev=view_elev, view_azim=view_azim)
     plt.show()
 
@@ -292,6 +306,7 @@ def save_png(
     path: Path,
     points_xyz: np.ndarray,
     anomaly_colors: np.ndarray,
+    anomaly_scores_01: np.ndarray,
     gt_colors: Optional[np.ndarray],
     pred_colors: Optional[np.ndarray],
     metrics: Optional[dict],
@@ -301,8 +316,11 @@ def save_png(
     top_view: bool = False,
     view_elev: float = 20.0,
     view_azim: float = -60.0,
+    zoom_factor: float = 0.85,
+    cmap_name: str = "hot",
 ) -> None:
     import matplotlib.pyplot as plt
+    from matplotlib import cm, colors
 
     panels = [("Prediction", anomaly_colors)]
     if gt_colors is not None:
@@ -334,7 +352,7 @@ def save_png(
     maxs = points_xyz.max(axis=0)
     span = np.maximum(maxs - mins, 1e-6)
     center = (mins + maxs) / 2.0
-    max_range = float(np.max(span) / 2.0)
+    max_range = float(np.max(span) / 2.0) * float(zoom_factor)
 
     for idx, (panel_title, colors) in enumerate(panels, start=1):
         ax = fig.add_subplot(1, len(panels), idx, projection="3d")
@@ -347,14 +365,20 @@ def save_png(
             linewidths=0,
         )
         ax.set_title(panel_title)
-        ax.set_xlabel("X")
-        ax.set_ylabel("Y")
-        ax.set_zlabel("Z")
+        ax.set_axis_off()
+        ax.grid(False)
         ax.set_xlim(center[0] - max_range, center[0] + max_range)
         ax.set_ylim(center[1] - max_range, center[1] + max_range)
         ax.set_zlim(center[2] - max_range, center[2] + max_range)
         _apply_matplotlib_view(ax, top_view=top_view, view_elev=view_elev, view_azim=view_azim)
         ax.set_box_aspect((1.0, 1.0, 1.0))
+
+    # Add colorbar for anomaly/prediction scores.
+    norm = colors.Normalize(vmin=0.0, vmax=1.0)
+    mappable = cm.ScalarMappable(norm=norm, cmap=cm.get_cmap(cmap_name))
+    mappable.set_array(anomaly_scores_01)
+    cbar = fig.colorbar(mappable, ax=fig.axes, fraction=0.025, pad=0.02)
+    cbar.set_label("Prediction score (normalized)")
 
     path.parent.mkdir(parents=True, exist_ok=True)
     fig.tight_layout(rect=(0, 0.06, 1, 0.95))
@@ -406,6 +430,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--side-by-side", action="store_true", help="Show anomaly/gt/pred side by side in Open3D")
     parser.add_argument("--point-size", type=float, default=1.5, help="Open3D point size")
     parser.add_argument("--marker-size", type=float, default=0.5, help="Matplotlib marker size")
+    parser.add_argument("--zoom-factor", type=float, default=0.85, help="View zoom factor (<1.0 zooms in)")
     parser.add_argument("--save-ply", type=Path, default=None, help="Optional output PLY for anomaly colors")
     parser.add_argument("--save-png", type=Path, default=None, help="Optional output PNG with anomaly/label views")
     parser.add_argument("--png-dpi", type=int, default=200, help="DPI used when saving PNG")
@@ -432,6 +457,8 @@ def main() -> None:
 
     if args.p_high <= args.p_low:
         raise ValueError("--p-high must be greater than --p-low")
+    if args.zoom_factor <= 0:
+        raise ValueError("--zoom-factor must be > 0")
 
     points = load_points_xyz(args.points_npy)
     scores = load_scores(args.scores_txt)
@@ -440,7 +467,7 @@ def main() -> None:
         raise ValueError(f"points={len(points)} scores={len(scores)} mismatch")
 
     scores_01 = normalize_scores(scores, args.p_low, args.p_high)
-    anomaly_colors = colorize(scores_01, matplotlib.colormaps["spring"].reversed())
+    anomaly_colors = colorize(scores_01, args.cmap)
 
     gt_colors = None
     pred_colors = None
@@ -485,6 +512,7 @@ def main() -> None:
             path=args.save_png,
             points_xyz=points,
             anomaly_colors=anomaly_colors,
+            anomaly_scores_01=scores_01,
             gt_colors=gt_colors,
             pred_colors=pred_colors,
             metrics=metrics,
@@ -494,6 +522,8 @@ def main() -> None:
             top_view=args.top_view,
             view_elev=args.view_elev,
             view_azim=args.view_azim,
+            zoom_factor=args.zoom_factor,
+            cmap_name=args.cmap,
         )
         print(f"Saved PNG visualization: {args.save_png}")
 
@@ -526,6 +556,7 @@ def main() -> None:
         top_view=args.top_view,
         view_elev=args.view_elev,
         view_azim=args.view_azim,
+        zoom_factor=args.zoom_factor,
     )
 
 
