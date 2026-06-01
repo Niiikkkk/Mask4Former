@@ -546,7 +546,7 @@ def main() -> None:
                 print(f"Saved anomaly PLY: {args.save_ply}")
 
             if args.save_png is not None:
-                save_path = Path(os.path.join(args.save_png, picked_file))
+                save_path = Path(os.path.join(args.save_png, picked_file, ".png"))
                 save_png(
                     path=save_path,
                     points_xyz=points,
