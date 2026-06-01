@@ -73,52 +73,52 @@ def load_color_map(config_yaml: Path) -> Dict[int, List[int]]:
 
 
 def labels_to_colors(labels: np.ndarray, color_map_bgr: Dict[int, List[int]]) -> np.ndarray:
-	rgb = np.zeros((labels.shape[0], 3), dtype=np.float32)
-	default = np.array([0.5, 0.5, 0.5], dtype=np.float32)
-	labels_color = np.array([
-		(0, 0, 0),  # unlabeled = 0
-		# cityscape
-		(128, 64, 128),  # road = 1
-		(244, 35, 232),  # sidewalk = 2
-		(70, 70, 70),  # bilding = 3
-		(102, 102, 156),  # wall = 4
-		(190, 153, 153),  # fence = 5
-		(153, 153, 153),  # pole = 6
-		(250, 170, 30),  # trafficlight = 7
-		(220, 220, 0),  # trafficsign = 8
-		(107, 142, 35),  # vegetation = 9
-		(152, 251, 152),  # terrain = 10
-		(70, 130, 180),  # sky = 11
-		(220, 20, 60),  # pedestrian = 12
-		(255, 0, 0),  # rider = 13
-		(0, 0, 142),  # Car = 14
-		(0, 0, 70),  # trck = 15
-		(0, 60, 100),  # bs = 16
-		(0, 80, 100),  # train = 17
-		(0, 0, 230),  # motorcycle = 18
-		(119, 11, 32),  # bicycle = 19
-		# cstom
-		(110, 190, 160),  # static = 20
-		(170, 120, 50),  # dynamic = 21
-		(55, 90, 80),  # other = 22
-		(45, 60, 150),  # water = 23
-		(157, 234, 50),  # roadline = 24
-		(81, 0, 81),  # grond = 25
-		(150, 100, 100),  # bridge = 26
-		(230, 150, 140),  # railtrack = 27
-		(180, 165, 180),  # gardrail = 28
-		(180, 130, 70),  # rock = 29
-		# anomalies
-		(193, 71, 71),  # Static_Anomaly = 30
-		(102, 102, 255),  # Dynamic_Anomaly = 31
-		(175, 83, 83),  # Animal = 32
-		(232, 188, 188),  # Tinyanomaly = 33
-		(229, 137, 137),  # Smallanomaly = 34
-		(189, 47, 47),  # Mediumanomaly = 35
-		(131, 7, 7),  # Largeanomaly = 36
-	]) / 255.0
+    rgb = np.zeros((labels.shape[0], 3), dtype=np.float32)
+    default = np.array([0.5, 0.5, 0.5], dtype=np.float32)
+    labels_color = np.array([
+        (0, 0, 0),  # unlabeled = 0
+        # cityscape
+        (128, 64, 128),  # road = 1
+        (244, 35, 232),  # sidewalk = 2
+        (70, 70, 70),  # bilding = 3
+        (102, 102, 156),  # wall = 4
+        (190, 153, 153),  # fence = 5
+        (153, 153, 153),  # pole = 6
+        (250, 170, 30),  # trafficlight = 7
+        (220, 220, 0),  # trafficsign = 8
+        (107, 142, 35),  # vegetation = 9
+        (152, 251, 152),  # terrain = 10
+        (70, 130, 180),  # sky = 11
+        (220, 20, 60),  # pedestrian = 12
+        (255, 0, 0),  # rider = 13
+        (0, 0, 142),  # Car = 14
+        (0, 0, 70),  # trck = 15
+        (0, 60, 100),  # bs = 16
+        (0, 80, 100),  # train = 17
+        (0, 0, 230),  # motorcycle = 18
+        (119, 11, 32),  # bicycle = 19
+        # cstom
+        (110, 190, 160),  # static = 20
+        (170, 120, 50),  # dynamic = 21
+        (55, 90, 80),  # other = 22
+        (45, 60, 150),  # water = 23
+        (157, 234, 50),  # roadline = 24
+        (81, 0, 81),  # grond = 25
+        (150, 100, 100),  # bridge = 26
+        (230, 150, 140),  # railtrack = 27
+        (180, 165, 180),  # gardrail = 28
+        (180, 130, 70),  # rock = 29
+        # anomalies
+        (193, 71, 71),  # Static_Anomaly = 30
+        (102, 102, 255),  # Dynamic_Anomaly = 31
+        (175, 83, 83),  # Animal = 32
+        (232, 188, 188),  # Tinyanomaly = 33
+        (229, 137, 137),  # Smallanomaly = 34
+        (189, 47, 47),  # Mediumanomaly = 35
+        (131, 7, 7),  # Largeanomaly = 36
+    ]) / 255.0
 
-	return labels_color[labels]
+    return labels_color[labels]
 
 
 def normalize_scores(scores: np.ndarray, p_low: float, p_high: float) -> np.ndarray:
@@ -262,6 +262,77 @@ def show_matplotlib(points_xyz: np.ndarray, colors_rgb: np.ndarray, marker_size:
     plt.show()
 
 
+def save_png(
+    path: Path,
+    points_xyz: np.ndarray,
+    anomaly_colors: np.ndarray,
+    gt_colors: Optional[np.ndarray],
+    pred_colors: Optional[np.ndarray],
+    metrics: Optional[dict],
+    marker_size: float,
+    title: str,
+    dpi: int = 200,
+) -> None:
+    import matplotlib.pyplot as plt
+
+    panels = [("Prediction", anomaly_colors)]
+    if gt_colors is not None:
+        panels.append(("Label", gt_colors))
+    if pred_colors is not None:
+        panels.append(("Pred labels", pred_colors))
+
+    fig = plt.figure(figsize=(6 * len(panels), 7))
+    fig.suptitle(title, fontsize=14, y=0.98)
+
+    if metrics is not None:
+        metrics_text = (
+            f"AUROC: {metrics['auroc']:.4f}\n"
+            f"FPR95: {metrics['fpr95']:.4f}\n"
+            f"AUPRC: {metrics['auprc']:.4f}\n"
+            f"Points: {int(metrics['num_points'])} | Anomaly: {int(metrics['num_anomaly'])} | Normal: {int(metrics['num_normal'])}"
+        )
+        fig.text(
+            0.5,
+            0.02,
+            metrics_text,
+            ha="center",
+            va="bottom",
+            fontsize=11,
+            bbox=dict(boxstyle="round,pad=0.35", facecolor="white", alpha=0.85, edgecolor="0.3"),
+        )
+
+    mins = points_xyz.min(axis=0)
+    maxs = points_xyz.max(axis=0)
+    span = np.maximum(maxs - mins, 1e-6)
+    center = (mins + maxs) / 2.0
+    max_range = float(np.max(span) / 2.0)
+
+    for idx, (panel_title, colors) in enumerate(panels, start=1):
+        ax = fig.add_subplot(1, len(panels), idx, projection="3d")
+        ax.scatter(
+            points_xyz[:, 0],
+            points_xyz[:, 1],
+            points_xyz[:, 2],
+            c=colors,
+            s=marker_size,
+            linewidths=0,
+        )
+        ax.set_title(panel_title)
+        ax.set_xlabel("X")
+        ax.set_ylabel("Y")
+        ax.set_zlabel("Z")
+        ax.set_xlim(center[0] - max_range, center[0] + max_range)
+        ax.set_ylim(center[1] - max_range, center[1] + max_range)
+        ax.set_zlim(center[2] - max_range, center[2] + max_range)
+        ax.view_init(elev=20, azim=-60)
+        ax.set_box_aspect((1.0, 1.0, 1.0))
+
+    path.parent.mkdir(parents=True, exist_ok=True)
+    fig.tight_layout(rect=(0, 0.06, 1, 0.95))
+    fig.savefig(path, dpi=dpi, bbox_inches="tight")
+    plt.close(fig)
+
+
 def save_ply(path: Path, points_xyz: np.ndarray, colors_rgb: np.ndarray) -> None:
     rgb_u8 = np.clip(colors_rgb * 255.0, 0, 255).astype(np.uint8)
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -307,6 +378,14 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--point-size", type=float, default=1.5, help="Open3D point size")
     parser.add_argument("--marker-size", type=float, default=0.5, help="Matplotlib marker size")
     parser.add_argument("--save-ply", type=Path, default=None, help="Optional output PLY for anomaly colors")
+    parser.add_argument("--save-png", type=Path, default=None, help="Optional output PNG with anomaly/label views")
+    parser.add_argument("--png-dpi", type=int, default=200, help="DPI used when saving PNG")
+    parser.add_argument(
+        "--anomaly-label-start",
+        type=int,
+        default=31,
+        help="Semantic label id at or above which a point is treated as anomalous for AUROC/FPR",
+    )
     return parser.parse_args()
 
 
@@ -333,6 +412,7 @@ def main() -> None:
 
     gt_colors = None
     pred_colors = None
+    gt_labels = None
     if args.gt_labels is not None or args.pred_labels is not None:
         color_map = load_color_map(args.dataset_config)
 
@@ -348,24 +428,39 @@ def main() -> None:
                 raise ValueError(f"pred labels length {len(pred_labels)} != points length {len(points)}")
             pred_colors = labels_to_colors(pred_labels, color_map)
 
-
-    if gt_labels is None:
-        raise ValueError("--compute-metrics requires --gt-labels")
-    print(np.unique(gt_labels, return_counts=True))
-    metrics = compute_ood_metrics(scores, gt_labels, anomaly_label_start=31)
-    print("OOD metrics (labels >= {} are anomalies):".format(31))
-    print("AUROC : {:.6f}".format(metrics["auroc"]))
-    print("AUPRC : {:.6f}".format(metrics["auprc"]))
-    print("FPR95 : {:.6f}".format(metrics["fpr95"]))
-    print(
-        "Counts: total={:.0f}, anomaly={:.0f}, normal={:.0f}".format(
-            metrics["num_points"], metrics["num_anomaly"], metrics["num_normal"]
+    metrics = None
+    if gt_labels is not None:
+        print(np.unique(gt_labels, return_counts=True))
+        metrics = compute_ood_metrics(scores, gt_labels, anomaly_label_start=args.anomaly_label_start)
+        print("OOD metrics (labels >= {} are anomalies):".format(args.anomaly_label_start))
+        print("AUROC : {:.6f}".format(metrics["auroc"]))
+        print("AUPRC : {:.6f}".format(metrics["auprc"]))
+        print("FPR95 : {:.6f}".format(metrics["fpr95"]))
+        print(
+            "Counts: total={:.0f}, anomaly={:.0f}, normal={:.0f}".format(
+                metrics["num_points"], metrics["num_anomaly"], metrics["num_normal"]
+            )
         )
-    )
+    elif args.save_png is not None:
+        raise ValueError("--save-png requires --gt-labels so AUROC/FPR can be computed and displayed")
 
     if args.save_ply is not None:
         save_ply(args.save_ply, points, anomaly_colors)
         print(f"Saved anomaly PLY: {args.save_ply}")
+
+    if args.save_png is not None:
+        save_png(
+            path=args.save_png,
+            points_xyz=points,
+            anomaly_colors=anomaly_colors,
+            gt_colors=gt_colors,
+            pred_colors=pred_colors,
+            metrics=metrics,
+            marker_size=args.marker_size,
+            title="Anomaly prediction and ground-truth labels",
+            dpi=args.png_dpi,
+        )
+        print(f"Saved PNG visualization: {args.save_png}")
 
     if args.viewer == "open3d":
         show_open3d(
