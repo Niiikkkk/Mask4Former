@@ -469,87 +469,98 @@ def parse_args() -> argparse.Namespace:
 def main() -> None:
     args = parse_args()
     base_path = "/home/nicholas/Desktop/main_UE4/"
-    args.scores_txt = "saved/2026-03-24_093551/msp/47/output_test_Sunny_47_lidar_raw_lidar-521851.npy.txt"
-    path=args.scores_txt.split("/")[-1].split(".txt")[0].split("_")
-    point_path = base_path + "/".join(path)
-    args.points_npy = point_path
-    args.gt_labels = args.points_npy.replace("lidar","semantic_lidar")
 
-    if args.p_high <= args.p_low:
-        raise ValueError("--p-high must be greater than --p-low")
-    if args.zoom_factor <= 0:
-        raise ValueError("--zoom-factor must be > 0")
+    path="saved/2026-03-24_093551/msp"
+    dirs = os.listdir(path)
+    for dir in dirs:
+        files = os.listdir(os.path.join(path, dir))
+        picked_files = np.random.choice(files, size=3)
+        for picked_file in picked_files:
 
-    points = load_points_xyz(args.points_npy)
-    scores = load_scores(args.scores_txt)
 
-    if len(points) != len(scores):
-        raise ValueError(f"points={len(points)} scores={len(scores)} mismatch")
+            #args.scores_txt = "saved/2026-03-24_093551/msp/47/output_test_Sunny_47_lidar_raw_lidar-521851.npy.txt"
+            args.scores_txt = picked_file
+            path=args.scores_txt.split("/")[-1].split(".txt")[0].split("_")
+            point_path = base_path + "/".join(path)
+            args.points_npy = point_path
+            args.gt_labels = args.points_npy.replace("lidar","semantic_lidar")
 
-    scores_01 = normalize_scores(scores, args.p_low, args.p_high)
-    anomaly_colors = colorize(scores_01, args.cmap)
+            if args.p_high <= args.p_low:
+                raise ValueError("--p-high must be greater than --p-low")
+            if args.zoom_factor <= 0:
+                raise ValueError("--zoom-factor must be > 0")
 
-    gt_colors = None
-    pred_colors = None
-    gt_labels = None
-    if args.gt_labels is not None or args.pred_labels is not None:
-        color_map = load_color_map(args.dataset_config)
+            points = load_points_xyz(args.points_npy)
+            scores = load_scores(args.scores_txt)
 
-        if args.gt_labels is not None:
-            gt_labels = load_labels(args.gt_labels, args.label_format)
-            if len(gt_labels) != len(points):
-                raise ValueError(f"gt labels length {len(gt_labels)} != points length {len(points)}")
-            gt_colors = labels_to_anomaly_colors(
-                gt_labels,
-                color_map,
-                anomaly_label_start=args.anomaly_label_start,
-            )
+            if len(points) != len(scores):
+                raise ValueError(f"points={len(points)} scores={len(scores)} mismatch")
 
-        if args.pred_labels is not None:
-            pred_labels = load_labels(args.pred_labels, args.label_format)
-            if len(pred_labels) != len(points):
-                raise ValueError(f"pred labels length {len(pred_labels)} != points length {len(points)}")
-            pred_colors = labels_to_colors(pred_labels, color_map)
+            scores_01 = normalize_scores(scores, args.p_low, args.p_high)
+            anomaly_colors = colorize(scores_01, args.cmap)
 
-    metrics = None
-    if gt_labels is not None:
-        print(np.unique(gt_labels, return_counts=True))
-        metrics = compute_ood_metrics(scores, gt_labels, anomaly_label_start=args.anomaly_label_start)
-        print("OOD metrics (labels >= {} are anomalies):".format(args.anomaly_label_start))
-        print("AUROC : {:.6f}".format(metrics["auroc"]))
-        print("AUPRC : {:.6f}".format(metrics["auprc"]))
-        print("FPR95 : {:.6f}".format(metrics["fpr95"]))
-        print(
-            "Counts: total={:.0f}, anomaly={:.0f}, normal={:.0f}".format(
-                metrics["num_points"], metrics["num_anomaly"], metrics["num_normal"]
-            )
-        )
-    elif args.save_png is not None:
-        raise ValueError("--save-png requires --gt-labels so AUROC/FPR can be computed and displayed")
+            gt_colors = None
+            pred_colors = None
+            gt_labels = None
+            if args.gt_labels is not None or args.pred_labels is not None:
+                color_map = load_color_map(args.dataset_config)
 
-    if args.save_ply is not None:
-        save_ply(args.save_ply, points, anomaly_colors)
-        print(f"Saved anomaly PLY: {args.save_ply}")
+                if args.gt_labels is not None:
+                    gt_labels = load_labels(args.gt_labels, args.label_format)
+                    if len(gt_labels) != len(points):
+                        raise ValueError(f"gt labels length {len(gt_labels)} != points length {len(points)}")
+                    gt_colors = labels_to_anomaly_colors(
+                        gt_labels,
+                        color_map,
+                        anomaly_label_start=args.anomaly_label_start,
+                    )
 
-    if args.save_png is not None:
-        save_png(
-            path=args.save_png,
-            points_xyz=points,
-            anomaly_colors=anomaly_colors,
-            anomaly_scores_01=scores_01,
-            gt_colors=gt_colors,
-            pred_colors=pred_colors,
-            metrics=metrics,
-            marker_size=args.marker_size,
-            title="Anomaly prediction and ground-truth labels",
-            dpi=args.png_dpi,
-            top_view=args.top_view,
-            view_elev=args.view_elev,
-            view_azim=args.view_azim,
-            zoom_factor=args.zoom_factor,
-            cmap_name=args.cmap,
-        )
-        print(f"Saved PNG visualization: {args.save_png}")
+                if args.pred_labels is not None:
+                    pred_labels = load_labels(args.pred_labels, args.label_format)
+                    if len(pred_labels) != len(points):
+                        raise ValueError(f"pred labels length {len(pred_labels)} != points length {len(points)}")
+                    pred_colors = labels_to_colors(pred_labels, color_map)
+
+            metrics = None
+            if gt_labels is not None:
+                print(np.unique(gt_labels, return_counts=True))
+                metrics = compute_ood_metrics(scores, gt_labels, anomaly_label_start=args.anomaly_label_start)
+                print("OOD metrics (labels >= {} are anomalies):".format(args.anomaly_label_start))
+                print("AUROC : {:.6f}".format(metrics["auroc"]))
+                print("AUPRC : {:.6f}".format(metrics["auprc"]))
+                print("FPR95 : {:.6f}".format(metrics["fpr95"]))
+                print(
+                    "Counts: total={:.0f}, anomaly={:.0f}, normal={:.0f}".format(
+                        metrics["num_points"], metrics["num_anomaly"], metrics["num_normal"]
+                    )
+                )
+            elif args.save_png is not None:
+                raise ValueError("--save-png requires --gt-labels so AUROC/FPR can be computed and displayed")
+
+            if args.save_ply is not None:
+                save_ply(args.save_ply, points, anomaly_colors)
+                print(f"Saved anomaly PLY: {args.save_ply}")
+
+            if args.save_png is not None:
+                save_path = os.path.join(args.save_png, picked_file)
+                save_png(
+                    path=save_path,
+                    points_xyz=points,
+                    anomaly_colors=anomaly_colors,
+                    anomaly_scores_01=scores_01,
+                    gt_colors=gt_colors,
+                    pred_colors=pred_colors,
+                    metrics=metrics,
+                    marker_size=args.marker_size,
+                    title="Anomaly prediction and ground-truth labels",
+                    dpi=args.png_dpi,
+                    top_view=args.top_view,
+                    view_elev=args.view_elev,
+                    view_azim=args.view_azim,
+                    zoom_factor=args.zoom_factor,
+                    cmap_name=args.cmap,
+                )
+                print(f"Saved PNG visualization: {args.save_png}")
 
     if args.viewer == "open3d":
         show_open3d(
