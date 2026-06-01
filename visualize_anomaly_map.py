@@ -131,7 +131,7 @@ def normalize_scores(scores: np.ndarray, p_low: float, p_high: float) -> np.ndar
 def colorize(values_01: np.ndarray, cmap: str = "turbo") -> np.ndarray:
     from matplotlib import cm
 
-    rgba = cm.get_cmap(cmap)(values_01)
+    rgba = cm.get_cmap(cmap).reversed()(values_01)
     return rgba[:, :3].astype(np.float32)
 
 
@@ -335,8 +335,8 @@ def save_png(
         metrics_text = (
             f"AUROC: {metrics['auroc']:.4f}\n"
             f"FPR95: {metrics['fpr95']:.4f}\n"
-            f"AUPRC: {metrics['auprc']:.4f}\n"
-            f"Points: {int(metrics['num_points'])} | Anomaly: {int(metrics['num_anomaly'])} | Normal: {int(metrics['num_normal'])}"
+            #f"AUPRC: {metrics['auprc']:.4f}\n"
+            #f"Points: {int(metrics['num_points'])} | Anomaly: {int(metrics['num_anomaly'])} | Normal: {int(metrics['num_normal'])}"
         )
         fig.text(
             0.5,
@@ -347,6 +347,9 @@ def save_png(
             fontsize=11,
             bbox=dict(boxstyle="round,pad=0.35", facecolor="white", alpha=0.85, edgecolor="0.3"),
         )
+
+    # Reserve room on the right so the colorbar does not overlap the plots.
+    fig.subplots_adjust(right=0.86)
 
     mins = points_xyz.min(axis=0)
     maxs = points_xyz.max(axis=0)
@@ -373,11 +376,12 @@ def save_png(
         _apply_matplotlib_view(ax, top_view=top_view, view_elev=view_elev, view_azim=view_azim)
         ax.set_box_aspect((1.0, 1.0, 1.0))
 
-    # Add colorbar for anomaly/prediction scores.
+    # Add colorbar for anomaly/prediction scores in a dedicated axis.
     norm = colors.Normalize(vmin=0.0, vmax=1.0)
-    mappable = cm.ScalarMappable(norm=norm, cmap=cm.get_cmap(cmap_name))
+    mappable = cm.ScalarMappable(norm=norm, cmap=cm.get_cmap(cmap_name).reversed())
     mappable.set_array(anomaly_scores_01)
-    cbar = fig.colorbar(mappable, ax=fig.axes, fraction=0.025, pad=0.02)
+    cax = fig.add_axes([0.89, 0.18, 0.022, 0.64])
+    cbar = fig.colorbar(mappable, cax=cax)
     cbar.set_label("Prediction score (normalized)")
 
     path.parent.mkdir(parents=True, exist_ok=True)
