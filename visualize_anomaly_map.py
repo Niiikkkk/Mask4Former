@@ -522,6 +522,7 @@ def main() -> None:
                 if args.pred_labels is not None:
                     pred_labels = load_labels(args.pred_labels, args.label_format)
                     if len(pred_labels) != len(points):
+                        continue
                         raise ValueError(f"pred labels length {len(pred_labels)} != points length {len(points)}")
                     pred_colors = labels_to_colors(pred_labels, color_map)
 
@@ -546,7 +547,8 @@ def main() -> None:
                 print(f"Saved anomaly PLY: {args.save_ply}")
 
             if args.save_png is not None:
-                save_path = Path(os.path.join(args.save_png, picked_file, ".png"))
+                save_path = Path(os.path.join(args.save_png, picked_file))
+                save_path = save_path + ".png"
                 save_png(
                     path=save_path,
                     points_xyz=points,
