@@ -479,6 +479,9 @@ def main() -> None:
         picked_files = np.random.choice(files, size=3)
         for picked_file in picked_files:
 
+            print(picked_file)
+            print(dir)
+
             picked_file = os.path.join(path, dir, picked_file)
 
 
