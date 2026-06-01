@@ -2,6 +2,8 @@ import argparse
 from pathlib import Path
 from typing import Dict, List, Optional
 
+import os
+
 import matplotlib
 import numpy as np
 import yaml
