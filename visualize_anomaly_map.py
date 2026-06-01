@@ -472,17 +472,14 @@ def main() -> None:
     args = parse_args()
     base_path = "/home/nicholas/Desktop/main_UE4/"
 
-    path="saved/2026-03-24_093551/msp"
-    dirs = os.listdir(path)
+    path_saved="saved/2026-03-24_093551/msp"
+    dirs = os.listdir(path_saved)
     for dir in dirs:
-        files = os.listdir(os.path.join(path, dir))
+        files = os.listdir(os.path.join(path_saved, dir))
         picked_files = np.random.choice(files, size=3)
         for picked_file in picked_files:
 
-            print(picked_file)
-            print(dir)
-
-            picked_file = os.path.join(path, dir, picked_file)
+            picked_file = os.path.join(path_saved, dir, picked_file)
 
 
             #args.scores_txt = "saved/2026-03-24_093551/msp/47/output_test_Sunny_47_lidar_raw_lidar-521851.npy.txt"
