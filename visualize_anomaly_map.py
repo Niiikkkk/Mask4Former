@@ -354,13 +354,13 @@ def save_png(
     center = (mins + maxs) / 2.0
     max_range = float(np.max(span) / 2.0) * float(zoom_factor)
 
-    for idx, (panel_title, colors) in enumerate(panels, start=1):
+    for idx, (panel_title, panel_colors) in enumerate(panels, start=1):
         ax = fig.add_subplot(1, len(panels), idx, projection="3d")
         ax.scatter(
             points_xyz[:, 0],
             points_xyz[:, 1],
             points_xyz[:, 2],
-            c=colors,
+            c=panel_colors,
             s=marker_size,
             linewidths=0,
         )
