@@ -186,6 +186,7 @@ def show_open3d(
     gt_colors: Optional[np.ndarray] = None,
     pred_colors: Optional[np.ndarray] = None,
     side_by_side: bool = False,
+    top_view: bool = False,
 ) -> None:
     import open3d as o3d
 
@@ -248,17 +249,42 @@ def show_open3d(
     opt = vis.get_render_option()
     opt.point_size = float(point_size)
     opt.background_color = np.asarray([0.0, 0.0, 0.0])
+
+    if top_view:
+        ctr = vis.get_view_control()
+        ctr.set_lookat(points_xyz.mean(axis=0).tolist())
+        # Top-down camera along +Z -> -Z with +Y as up direction.
+        ctr.set_front([0.0, 0.0, -1.0])
+        ctr.set_up([0.0, 1.0, 0.0])
+        ctr.set_zoom(0.45)
+
     vis.run()
     vis.destroy_window()
 
 
-def show_matplotlib(points_xyz: np.ndarray, colors_rgb: np.ndarray, marker_size: float, title: str) -> None:
+def _apply_matplotlib_view(ax, top_view: bool, view_elev: float, view_azim: float) -> None:
+    if top_view:
+        ax.view_init(elev=90.0, azim=-90.0)
+    else:
+        ax.view_init(elev=view_elev, azim=view_azim)
+
+
+def show_matplotlib(
+    points_xyz: np.ndarray,
+    colors_rgb: np.ndarray,
+    marker_size: float,
+    title: str,
+    top_view: bool,
+    view_elev: float,
+    view_azim: float,
+) -> None:
     import matplotlib.pyplot as plt
 
     fig = plt.figure(figsize=(10, 8))
     ax = fig.add_subplot(111, projection="3d")
     ax.scatter(points_xyz[:, 0], points_xyz[:, 1], points_xyz[:, 2], c=colors_rgb, s=marker_size)
     ax.set_title(title)
+    _apply_matplotlib_view(ax, top_view=top_view, view_elev=view_elev, view_azim=view_azim)
     plt.show()
 
 
@@ -272,6 +298,9 @@ def save_png(
     marker_size: float,
     title: str,
     dpi: int = 200,
+    top_view: bool = False,
+    view_elev: float = 20.0,
+    view_azim: float = -60.0,
 ) -> None:
     import matplotlib.pyplot as plt
 
@@ -324,7 +353,7 @@ def save_png(
         ax.set_xlim(center[0] - max_range, center[0] + max_range)
         ax.set_ylim(center[1] - max_range, center[1] + max_range)
         ax.set_zlim(center[2] - max_range, center[2] + max_range)
-        ax.view_init(elev=20, azim=-60)
+        _apply_matplotlib_view(ax, top_view=top_view, view_elev=view_elev, view_azim=view_azim)
         ax.set_box_aspect((1.0, 1.0, 1.0))
 
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -380,6 +409,9 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--save-ply", type=Path, default=None, help="Optional output PLY for anomaly colors")
     parser.add_argument("--save-png", type=Path, default=None, help="Optional output PNG with anomaly/label views")
     parser.add_argument("--png-dpi", type=int, default=200, help="DPI used when saving PNG")
+    parser.add_argument("--top-view", action="store_true", help="Use top-down camera view for plots")
+    parser.add_argument("--view-elev", type=float, default=20.0, help="Matplotlib camera elevation (ignored with --top-view)")
+    parser.add_argument("--view-azim", type=float, default=-60.0, help="Matplotlib camera azimuth (ignored with --top-view)")
     parser.add_argument(
         "--anomaly-label-start",
         type=int,
@@ -459,6 +491,9 @@ def main() -> None:
             marker_size=args.marker_size,
             title="Anomaly prediction and ground-truth labels",
             dpi=args.png_dpi,
+            top_view=args.top_view,
+            view_elev=args.view_elev,
+            view_azim=args.view_azim,
         )
         print(f"Saved PNG visualization: {args.save_png}")
 
@@ -470,6 +505,7 @@ def main() -> None:
             gt_colors=gt_colors,
             pred_colors=pred_colors,
             side_by_side=args.side_by_side,
+            top_view=args.top_view,
         )
         return
 
@@ -482,7 +518,15 @@ def main() -> None:
     colors = layer_colors[args.matplot_layer]
     if colors is None:
         raise ValueError(f"Requested matplotlib layer '{args.matplot_layer}' but labels were not provided")
-    show_matplotlib(points, colors, args.marker_size, f"Layer: {args.matplot_layer}")
+    show_matplotlib(
+        points,
+        colors,
+        args.marker_size,
+        f"Layer: {args.matplot_layer}",
+        top_view=args.top_view,
+        view_elev=args.view_elev,
+        view_azim=args.view_azim,
+    )
 
 
 if __name__ == "__main__":
