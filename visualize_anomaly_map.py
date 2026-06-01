@@ -121,6 +121,22 @@ def labels_to_colors(labels: np.ndarray, color_map_bgr: Dict[int, List[int]]) ->
     return labels_color[labels]
 
 
+def labels_to_anomaly_colors(
+    labels: np.ndarray,
+    color_map_bgr: Dict[int, List[int]],
+    anomaly_label_start: int = 30,
+    default_color=None,
+) -> np.ndarray:
+    if default_color is None:
+        default_color = [0.5, 0.5, 0.5]
+
+    colors = np.tile(np.asarray(default_color, dtype=np.float32), (labels.shape[0], 1))
+    anomaly_mask = labels >= anomaly_label_start
+    if np.any(anomaly_mask):
+        colors[anomaly_mask] = labels_to_colors(labels[anomaly_mask], color_map_bgr)
+    return colors
+
+
 def normalize_scores(scores: np.ndarray, p_low: float, p_high: float) -> np.ndarray:
     lo, hi = np.percentile(scores, p_low), np.percentile(scores, p_high)
     if hi <= lo:
@@ -345,7 +361,7 @@ def save_png(
             ha="center",
             va="bottom",
             fontsize=11,
-            bbox=dict(boxstyle="round,pad=0.35", facecolor="white", alpha=0.85, edgecolor="0.3"),
+            #bbox=dict(boxstyle="round,pad=0.35", facecolor="white", alpha=0.85, edgecolor="0.3"),
         )
 
     # Reserve room on the right so the colorbar does not overlap the plots.
@@ -483,7 +499,11 @@ def main() -> None:
             gt_labels = load_labels(args.gt_labels, args.label_format)
             if len(gt_labels) != len(points):
                 raise ValueError(f"gt labels length {len(gt_labels)} != points length {len(points)}")
-            gt_colors = labels_to_colors(gt_labels, color_map)
+            gt_colors = labels_to_anomaly_colors(
+                gt_labels,
+                color_map,
+                anomaly_label_start=args.anomaly_label_start,
+            )
 
         if args.pred_labels is not None:
             pred_labels = load_labels(args.pred_labels, args.label_format)
