@@ -479,6 +479,8 @@ def main() -> None:
         picked_files = np.random.choice(files, size=3)
         for picked_file in picked_files:
 
+            picked_file = os.path.join(path, dir, picked_file)
+
 
             #args.scores_txt = "saved/2026-03-24_093551/msp/47/output_test_Sunny_47_lidar_raw_lidar-521851.npy.txt"
             args.scores_txt = picked_file
